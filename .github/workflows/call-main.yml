@@ -1,0 +1,15 @@
+name: Main Publish 
+run-name: ${{ github.actor }} has launched the ${{ inputs.environment }} pipeline
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  call-workflow-passing-data:
+    uses: fernandocasanova/CiCdPrimitives/.github/workflows/main-publish.yml@main
+    with:
+      environment: uat
+    secrets:
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      REFRESH_TOK: ${{ secrets.REFRESH_TOK }}

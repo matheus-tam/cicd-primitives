@@ -1,0 +1,20 @@
+name: Main Publish 
+run-name: ${{ github.actor }} has launched the ${{ inputs.environment }} pipeline
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      CLIENT_ID:
+        required: true
+      REFRESH_TOK:
+        required: true
+jobs:
+  Select-Environment:
+    runs-on: uipath-cli
+    steps:
+      - name: Display environment name
+        shell: pwsh
+        run: Write-Host ${{ inputs.environment }}
