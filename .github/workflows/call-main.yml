@@ -4,10 +4,19 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
 on:
   push:
-    branches: [ uat, prd ]
+    branches: [ main, uat, prd ]
   pull_request:
-    branches: [ uat, prd ]
+    branches: [ main, uat, prd ]
 jobs:
+  download-latest-code:
+      - name: Checkout the latest version of the repo
+        uses: actions/checkout@v3
+      - name: List files in the folder
+        shell: pwsh
+        run: dir
+      - name: Display SHA of commit
+        shell: pwsh
+        run: Write-Host "${{github.sha}}".Substring(0, 7)
   call-workflow-passing-data:
     uses: Test-Organisation-FCC/cicd-primitives/.github/workflows/main-publish.yml@main
     with:
