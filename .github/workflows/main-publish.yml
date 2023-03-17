@@ -1,0 +1,28 @@
+name: Main Publish 
+run-name: ${{ github.actor }} has launched the ${{ inputs.environment }} pipeline
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      MY_CLIENT_ID:
+        required: true
+      MY_REFRESH_TOK:
+        required: true
+jobs:
+  Download-Dependencies:
+    runs-on: uipath-cli
+    steps:
+      - name: Checkout the latest version of the repo
+        uses: actions/checkout@v3
+        with:
+           repository: Test-Organisation-FCC/cicd-primitives
+           ref: main
+  Select-Environment:
+    runs-on: uipath-cli
+    steps:
+      - name: Display environment name
+        shell: pwsh
+        run: Write-Host ${{ inputs.environment }}
