@@ -9,6 +9,8 @@ on:
     branches: [ main, uat, prd ]
 jobs:
   download-latest-code:
+    runs-on: uipath-cli
+    steps:
       - name: Checkout the latest version of the repo
         uses: actions/checkout@v3
       - name: List files in the folder
