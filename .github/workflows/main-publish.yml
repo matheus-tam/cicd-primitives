@@ -70,22 +70,26 @@ jobs:
             $folderName = "${{ inputs.folder_prd }}"
           }
           "TENANT_NAME=$tenantName" >> $env:GITHUB_ENV
-          Write-Host "Working on Organisation: ${{ vars.ORG_NAME }} Tenant: $tenantName Folder: $folderName"
-          echo "::set-output name=tenantName::$tenantName"
-          echo "::set-output name=folderName::$folderName"
+          "tenantName=$tenantName" >> $env:GITHUB_OUTPUT
+          "folderName=$folderName" >> $env:GITHUB_OUTPUT
+          Write-Host "Working on Organisation: ${{ vars.ORG_NAME }} Tenant: ${tenantName} Folder: $folderName"
       - name: Get Base Orchestrator Url
         id: baseurl
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
           $baseurl = GetUrlOrchestratorApiBaseCloud -organizationId "${{ vars.ORG_NAME }}" -tenantName "${{ env.TENANT_NAME }}"
-          echo "::set-output name=baseurl::$baseurl"
+          "baseurl=$baseurl" >> $env:GITHUB_OUTPUT
       - name: Authenticate and get token
         id: beartok
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
           $bearTok = AuthenticateToCloudAndGetBearerToken -clientId "${{ secrets.CLIENT_ID }}" -refreshToken "${{ secrets.REFRESH_TOK }}" -tenantName "${{ env.TENANT_NAME }}"
+          if( $bearTok -eq "" )
+          {
+            exit 1
+          }
           echo "::set-output name=beartok::$bearTok"
   Run-Workflow-Analyzer:
     needs: [Prepare-Environment]
