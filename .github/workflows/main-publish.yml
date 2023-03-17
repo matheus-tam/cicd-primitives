@@ -59,12 +59,12 @@ jobs:
         id: envvars
         shell: pwsh
         run: |
-          if ( ${{ inputs.environment }} -eq "uat")
+          if ( "${{ inputs.environment }}" -eq "uat")
           {
             $tenantName = ${{ vars.TENANT_NAME_UAT }}
             $folderName = ${{ inputs.folder_uat }}
           }
-          if ( ${{ inputs.environment }} -eq "prd")
+          if ( "${{ inputs.environment }}" -eq "prd")
           {
             $tenantName = ${{ vars.TENANT_NAME_PRD }}
             $folderName = ${{ inputs.folder_prd }}
