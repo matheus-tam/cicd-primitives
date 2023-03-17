@@ -1,10 +1,12 @@
 name: Main Publish 
-run-name: ${{ github.actor }} has launched the ${{ inputs.environment }} pipeline
+run-name: ${{ github.actor }} has launched the ${{ env.BRANCH_NAME }} pipeline
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
 on:
   push:
-    branches: [ main ]
+    branches: [ uat, prd ]
   pull_request:
-    branches: [ main ]
+    branches: [ uat, prd ]
 jobs:
   call-workflow-passing-data:
     uses: Test-Organisation-FCC/cicd-primitives/.github/workflows/main-publish.yml@main
