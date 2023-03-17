@@ -61,13 +61,13 @@ jobs:
         run: |
           if ( "${{ inputs.environment }}" -eq "uat")
           {
-            $tenantName = ${{ vars.TENANT_NAME_UAT }}
-            $folderName = ${{ inputs.folder_uat }}
+            $tenantName = "${{ vars.TENANT_NAME_UAT }}"
+            $folderName = "${{ inputs.folder_uat }}"
           }
           if ( "${{ inputs.environment }}" -eq "prd")
           {
-            $tenantName = ${{ vars.TENANT_NAME_PRD }}
-            $folderName = ${{ inputs.folder_prd }}
+            $tenantName = "${{ vars.TENANT_NAME_PRD }}"
+            $folderName = "${{ inputs.folder_prd }}"
           }
           "TENANT_NAME=$tenantName" >> $env:GITHUB_ENV
           Write-Host "Working on Organisation: ${{ vars.ORG_NAME }} Tenant: $tenantName Folder: $folderName"
