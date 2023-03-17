@@ -1,5 +1,5 @@
 name: Main Publish 
-run-name: ${{ github.actor }} has launched the ${{ env.BRANCH_NAME }} pipeline
+run-name: ${{ github.actor }} has launched the ${{ github.head_ref || github.ref_name }} pipeline
 on:
   push:
     branches: [ main, uat, prd ]
