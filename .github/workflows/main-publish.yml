@@ -12,15 +12,16 @@ on:
       MY_REFRESH_TOK:
         required: true
 jobs:
-  Download-Dependencies:
+  Download-CiCd-Dependencies:
     runs-on: uipath-cli
     steps:
-      - name: Checkout the latest version of the repo
+      - name: Checkout the latest version of the CiCd primitives
         uses: actions/checkout@v3
         with:
            repository: Test-Organisation-FCC/cicd-primitives
            ref: main
   Select-Environment:
+    needs: Download-CiCd-Dependencies
     runs-on: uipath-cli
     steps:
       - name: Display environment name
