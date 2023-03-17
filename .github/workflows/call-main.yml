@@ -1,7 +1,5 @@
 name: Main Publish 
 run-name: ${{ github.actor }} has launched the ${{ env.BRANCH_NAME }} pipeline
-env:
-  BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
 on:
   push:
     branches: [ main, uat, prd ]
@@ -10,6 +8,8 @@ on:
 jobs:
   download-latest-code:
     runs-on: uipath-cli
+    env:
+      BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
     steps:
       - name: Checkout the latest version of the repo
         uses: actions/checkout@v3
@@ -18,7 +18,7 @@ jobs:
         run: dir
       - name: Display SHA of commit
         shell: pwsh
-        run: Write-Host "${{github.sha}}".Substring(0, 7)
+        run: Write-Host ( "Change in branch ${{ env.BRANCH_NAME }}" + "${{github.sha}}".Substring(0, 7) )
   call-workflow-passing-data:
     uses: Test-Organisation-FCC/cicd-primitives/.github/workflows/main-publish.yml@main
     with:
