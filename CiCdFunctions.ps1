@@ -33,6 +33,7 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
     }
     if( $response.StatusCode -ne 200 )
     {
+        Write-Error "Problem with authentication (Orchestrator)"
         exit 1
     }
     return ConvertFrom-Json $response.Content
@@ -44,7 +45,7 @@ function AuthenticateToCloudAndGetBearerToken([string]$clientId, [string]$refres
     $body = @{"grant_type"="refresh_token"; "client_id"="$($clientId)"; "refresh_token"="$($refreshToken)"}
     $headers = @{"Authorization"="Bearer"; "X-UIPATH-TenantName"="$($tenantName)"}
     $uri = "https://account.uipath.com/oauth/token"
-    $response = PostOrchApi -bearerToken "" -uri $uri -headers $headers -body $body -debug $true
+    $response = PostOrchApi -bearerToken "" -uri $uri -headers $headers -body $body
     if($debug) {
         Write-Host $response
     }

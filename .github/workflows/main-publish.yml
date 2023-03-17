@@ -88,9 +88,10 @@ jobs:
           $bearTok = AuthenticateToCloudAndGetBearerToken -clientId "${{ secrets.CLIENT_ID }}" -refreshToken "${{ secrets.REFRESH_TOK }}" -tenantName "${{ env.TENANT_NAME }}"
           if( $bearTok -eq "" )
           {
+            Write-Error "Problem with authentication (Bearer Token empty)"
             exit 1
           }
-          echo "::set-output name=beartok::$bearTok"
+          "beartok=$beartok" >> $env:GITHUB_OUTPUT
   Run-Workflow-Analyzer:
     needs: [Prepare-Environment]
     runs-on: uipath-cli
@@ -120,7 +121,7 @@ jobs:
         run: |
           . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcess -orchestratorApiBaseUrl ${{ env.BASE_URL }} -bearerToken ${{ env.BEAR_TOK }}
           "FINAL_VERSION_PROCESS=$finalVersionProcess" >> $env:GITHUB_ENV
-          echo "::set-output name=finalVersionProcess::$finalVersionProcess"
+          "finalVersionProcess=$finalVersionProcess" >> $env:GITHUB_OUTPUT
       - name: Build Package
         id: nugetPath
         shell: pwsh
@@ -133,7 +134,7 @@ jobs:
           cd $oldFolder
           $processName = GetProcessName
           $nugetPath = "$processName.${{ env.FINAL_VERSION_PROCESS }}.nupkg"
-          echo "::set-output name=nugetPath::$nugetPath"
+          "nugetPath=$nugetPath" >> $env:GITHUB_OUTPUT
       - name: Build Test Package
         id: nugetTestPath
         shell: pwsh
@@ -142,7 +143,7 @@ jobs:
           uipcli package pack "$pwd\project.json" -o "$pwd" --outputType Tests -v ${{ env.FINAL_VERSION_PROCESS }}
           $processName = GetProcessName
           $nugetTestPath = "${processName}_Tests.${{ env.FINAL_VERSION_PROCESS }}.nupkg"
-          echo "::set-output name=nugetTestPath::$nugetTestPath"
+          "nugetTestPath=$nugetTestPath" >> $env:GITHUB_OUTPUT
   Upload-Packages:
     needs: [Prepare-Environment, Build-RPA-And-Test-Packages]
     runs-on: uipath-cli
