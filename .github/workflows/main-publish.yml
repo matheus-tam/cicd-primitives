@@ -105,7 +105,7 @@ jobs:
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          Write-Host "Bearer Token: > ${{ env.BEAR_TOK }} < Length: " + "${{ env.BEAR_TOK }}".Length.ToString()
+          Write-Host "Bearer Token: > ${{needs.Prepare-Environment.outputs.beartok}} < Length: " + "${{needs.Prepare-Environment.outputs.beartok}}".Length.ToString()
           uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "${{ env.BASE_URL }}" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountName "${{ vars.ORG_NAME }}" --orchestratorAuthToken "${{ secrets.REFRESH_TOK }}"
   Build-RPA-And-Test-Packages:
     needs: [Prepare-Environment, Run-Workflow-Analyzer]
