@@ -91,6 +91,7 @@ jobs:
             Write-Error "Problem with authentication (Bearer Token empty)"
             exit 1
           }
+          Write-Host "Bearer Token: > $bearTok < Length: " + "$bearTok".Length.ToString()
           "beartok=$beartok" >> $env:GITHUB_OUTPUT
   Run-Workflow-Analyzer:
     needs: [Prepare-Environment]
