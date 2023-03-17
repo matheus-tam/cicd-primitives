@@ -37,7 +37,6 @@ jobs:
       tenantName: ${{ steps.envvars.outputs.tenantName }}
       folderName: ${{ steps.envvars.outputs.folderName }}
       baseurl: ${{ steps.baseurl.outputs.baseurl }}
-      beartok: ${{ steps.beartok.outputs.beartok }}
     steps:
       - name: Check that the CLI is installed
         shell: pwsh
@@ -80,32 +79,17 @@ jobs:
           . .\CiCd\CiCdFunctions.ps1
           $baseurl = GetUrlOrchestratorApiBaseCloud -organizationId "${{ vars.ORG_NAME }}" -tenantName "${{ env.TENANT_NAME }}"
           "baseurl=$baseurl" >> $env:GITHUB_OUTPUT
-      - name: Authenticate and get token
-        id: beartok
-        shell: pwsh
-        run: |
-          . .\CiCd\CiCdFunctions.ps1
-          $bearTok = AuthenticateToCloudAndGetBearerToken -clientId "${{ secrets.CLIENT_ID }}" -refreshToken "${{ secrets.REFRESH_TOK }}" -tenantName "${{ env.TENANT_NAME }}"
-          if( $bearTok -eq "" )
-          {
-            Write-Error "Problem with authentication (Bearer Token empty)"
-            exit 1
-          }
-          Write-Host "Bearer Token: > $bearTok < Length: " + "$bearTok".Length.ToString()
-          "beartok=$beartok" >> $env:GITHUB_OUTPUT
   Run-Workflow-Analyzer:
     needs: [Prepare-Environment]
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
-      BEAR_TOK: ${{needs.Prepare-Environment.outputs.beartok}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
     steps:
       - name: Run workflow analyzer
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          Write-Host "Bearer Token: > ${{needs.Prepare-Environment.outputs.beartok}} < Length: " + "${{needs.Prepare-Environment.outputs.beartok}}".Length.ToString()
           uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "${{ env.BASE_URL }}" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountName "${{ vars.ORG_NAME }}" --orchestratorAuthToken "${{ secrets.REFRESH_TOK }}"
   Build-RPA-And-Test-Packages:
     needs: [Prepare-Environment, Run-Workflow-Analyzer]
@@ -116,13 +100,19 @@ jobs:
       nugetTestPath: ${{ steps.nugetTestPath.outputs.nugetTestPath }}
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
-      BEAR_TOK: ${{needs.Prepare-Environment.outputs.beartok}}
     steps:
+      - name: Authenticate and get token
+        id: beartok
+        shell: pwsh
+        run: |
+          . .\CiCd\CiCdFunctions.ps1
+          $bearTok = AuthenticateToCloudAndGetBearerToken -clientId "${{ secrets.CLIENT_ID }}" -refreshToken "${{ secrets.REFRESH_TOK }}" -tenantName "${{ env.TENANT_NAME }}"
+          "BEAR_TOK=$beartok" >> $env:GITHUB_ENV
       - name: Get Latest version of process
         id: finalVersionProcess
         shell: pwsh
         run: |
-          . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcess -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -bearerToken "${{needs.Prepare-Environment.outputs.beartok}}"
+          . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcess -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -bearerToken "${{ env.BEAR_TOK }}"
           "FINAL_VERSION_PROCESS=$finalVersionProcess" >> $env:GITHUB_ENV
           "finalVersionProcess=$finalVersionProcess" >> $env:GITHUB_OUTPUT
       - name: Build Package
@@ -152,10 +142,16 @@ jobs:
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
-      BEAR_TOK: ${{needs.Prepare-Environment.outputs.beartok}}
       NUGET_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetPath}}
       NUGET_TEST_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetTestPath}}
     steps:
+      - name: Authenticate and get token
+        id: beartok
+        shell: pwsh
+        run: |
+          . .\CiCd\CiCdFunctions.ps1
+          $bearTok = AuthenticateToCloudAndGetBearerToken -clientId "${{ secrets.CLIENT_ID }}" -refreshToken "${{ secrets.REFRESH_TOK }}" -tenantName "${{ env.TENANT_NAME }}"
+          "BEAR_TOK=$beartok" >> $env:GITHUB_ENV
       - name: Upload package to Orchestrator
         shell: pwsh
         run: |
@@ -186,10 +182,16 @@ jobs:
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
-      BEAR_TOK: ${{needs.Prepare-Environment.outputs.beartok}}
       FINAL_VERSION_PROCESS: ${{needs.Build-RPA-And-Test-Packages.outputs.finalVersionProcess}}
       FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
     steps:
+      - name: Authenticate and get token
+        id: beartok
+        shell: pwsh
+        run: |
+          . .\CiCd\CiCdFunctions.ps1
+          $bearTok = AuthenticateToCloudAndGetBearerToken -clientId "${{ secrets.CLIENT_ID }}" -refreshToken "${{ secrets.REFRESH_TOK }}" -tenantName "${{ env.TENANT_NAME }}"
+          "BEAR_TOK=$beartok" >> $env:GITHUB_ENV
       - name: Get Folder ID from Name
         shell: pwsh
         run: |
