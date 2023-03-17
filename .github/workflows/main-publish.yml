@@ -122,7 +122,7 @@ jobs:
         id: finalVersionProcess
         shell: pwsh
         run: |
-          . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcess -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -bearerToken "${{ env.BEAR_TOK }}"
+          . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcess -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -bearerToken "${{needs.Prepare-Environment.outputs.beartok}}"
           "FINAL_VERSION_PROCESS=$finalVersionProcess" >> $env:GITHUB_ENV
           "finalVersionProcess=$finalVersionProcess" >> $env:GITHUB_OUTPUT
       - name: Build Package
