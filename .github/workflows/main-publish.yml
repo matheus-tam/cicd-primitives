@@ -7,9 +7,9 @@ on:
         required: true
         type: string
     secrets:
-      CLIENT_ID:
+      MY_CLIENT_ID:
         required: true
-      REFRESH_TOK:
+      MY_REFRESH_TOK:
         required: true
 jobs:
   Select-Environment:

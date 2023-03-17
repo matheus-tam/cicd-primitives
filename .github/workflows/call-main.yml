@@ -7,9 +7,9 @@ on:
     branches: [ main ]
 jobs:
   call-workflow-passing-data:
-    uses: fernandocasanova/CiCdPrimitives/.github/workflows/main-publish.yml@main
+    uses: Test-Organisation-FCC/cicd-primitives/.github/workflows/main-publish.yml@main
     with:
       environment: uat
     secrets:
-      CLIENT_ID: ${{ secrets.CLIENT_ID }}
-      REFRESH_TOK: ${{ secrets.REFRESH_TOK }}
+      MY_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      MY_REFRESH_TOK: ${{ secrets.REFRESH_TOK }}
