@@ -41,10 +41,10 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
 
 # Interactions with the Orchestrator API
 
-function AuthenticateToCloudAndGetBearerToken([string]$clientId, [string]$refreshToken, [string]$tenantName, [bool]$debug = $false) {
-    $body = @{"grant_type"="refresh_token"; "client_id"="$($clientId)"; "refresh_token"="$($refreshToken)"}
+function AuthenticateToCloudAndGetBearerTokenClientCredentials([string]$clientId, [string]$clientSecret, [string]$scopes, [string]$tenantName, [string]$identityServer, [bool]$debug = $false) {
+    $body = @{"grant_type"="client_credentials"; "client_id"="$($clientId)"; "client_secret"="$($clientSecret)";"scope"=""}
     $headers = @{"Authorization"="Bearer"; "X-UIPATH-TenantName"="$($tenantName)"}
-    $uri = "https://account.uipath.com/oauth/token"
+    $uri = $identityServer
     $response = PostOrchApi -bearerToken "" -uri $uri -headers $headers -body $body
     if($debug) {
         Write-Host $response
@@ -104,8 +104,8 @@ function BumpProcessVersion([string]$orchestratorApiBaseUrl, [string]$bearerToke
 
 # Helper functions
 
-function GetUrlOrchestratorApiBaseCloud([string]$organizationId, [string]$tenantName) {
-    return "https://cloud.uipath.com/$($organizationId)/$($tenantName)/orchestrator_/odata"
+function GetUrlOrchestratorApiBaseCloud([string]$baseUrl, [string]$organizationId, [string]$tenantName) {
+    return "$($organizationId)/$($organizationId)/$($tenantName)/orchestrator_/odata"
 }
 
 function GetProcessName() {
