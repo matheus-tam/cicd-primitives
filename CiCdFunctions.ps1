@@ -1,7 +1,7 @@
 
 # Base WebRequest verbs
 
-function GetOrchApi([string]$bearerToken, [string]$uri, $headers = $null, [bool]$debug = $false) {
+function GetOrchApi([string]$bearerToken, [string]$uri, $headers = $null, [string]$contentType = "application/json", [bool]$debug = $false) {
     $tenantName = ExtractTenantNameFromUri -uri $uri
     if($debug) {
         Write-Host $uri
@@ -9,15 +9,22 @@ function GetOrchApi([string]$bearerToken, [string]$uri, $headers = $null, [bool]
     if( $headers -eq $null ) {
         $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-TenantName"="$($tenantName)"}
     }
-    $response = Invoke-WebRequest -Method 'Get' -Uri $uri -Headers $headers -ContentType "application/json"
+    $response = Invoke-WebRequest -Method 'Get' -Uri $uri -Headers $headers -ContentType "$($contentType)"
     if($debug) {
         Write-Host $response
     }
     return ConvertFrom-Json $response.Content
 }
 
-function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null, [bool]$debug = $false) {
-    $body_json = $body | ConvertTo-Json
+function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null, [string]$contentType = "application/json", [bool]$debug = $false) {
+    if($contentType -eq "application/json")
+    {
+        $body_json = $body | ConvertTo-Json
+    }
+    else
+    {
+        $body_json = $body
+    }
     $tenantName = ExtractTenantNameFromUri -uri $uri
     if($debug) {
         Write-Host $uri
@@ -27,14 +34,14 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
     if( $headers -eq $null ) {
         $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-TenantName"="$($tenantName)"}
     }
-    $response = Invoke-WebRequest -Method 'Post' -Uri $uri -Headers $headers -ContentType "application/json" -Body $body_json
+    $response = Invoke-WebRequest -Method 'Post' -Uri $uri -Headers $headers -ContentType "$($contentType)" -Body $body_json
     if($debug) {
         Write-Host $response
     }
     if( $response.StatusCode -ne 200 )
     {
         Write-Error "Problem with authentication (Orchestrator)"
-        exit 1
+        #exit 1
     }
     return ConvertFrom-Json $response.Content
 }
@@ -42,10 +49,11 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
 # Interactions with the Orchestrator API
 
 function AuthenticateToCloudAndGetBearerTokenClientCredentials([string]$clientId, [string]$clientSecret, [string]$scopes, [string]$tenantName, [string]$identityServer, [bool]$debug = $false) {
-    $body = @{"grant_type"="client_credentials"; "client_id"="$($clientId)"; "client_secret"="$($clientSecret)";"scope"=""}
-    $headers = @{"Authorization"="Bearer"; "X-UIPATH-TenantName"="$($tenantName)"}
+    $body = @{"grant_type"="client_credentials"; "client_id"="$($clientId)"; "client_secret"="$($clientSecret)";"scope"="$($scopes)"}
+    $headers = @{}
+    
     $uri = $identityServer
-    $response = PostOrchApi -bearerToken "" -uri $uri -headers $headers -body $body
+    $response = PostOrchApi -bearerToken "" -uri $uri -headers $headers -body $body -contentType "application/x-www-form-urlencoded" -debug $debug
     if($debug) {
         Write-Host $response
     }
@@ -105,7 +113,7 @@ function BumpProcessVersion([string]$orchestratorApiBaseUrl, [string]$bearerToke
 # Helper functions
 
 function GetUrlOrchestratorApiBaseCloud([string]$baseUrl, [string]$organizationId, [string]$tenantName) {
-    return "$($organizationId)/$($organizationId)/$($tenantName)/orchestrator_/odata"
+    return "$($baseUrl)/$($organizationId)/$($tenantName)/orchestrator_/odata"
 }
 
 function GetProcessName() {
