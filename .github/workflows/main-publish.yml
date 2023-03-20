@@ -12,6 +12,13 @@ on:
       folder_prd:
         required: true
         type: string
+    secrets:
+      CLIENT_ID:
+        required: true
+        type: string
+      CLIENT_SECRET:
+        required: true
+        type: string
 jobs:
   Get-CiCd-Primitives:
     runs-on: uipath-cli
