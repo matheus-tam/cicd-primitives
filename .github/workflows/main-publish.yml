@@ -95,6 +95,7 @@ jobs:
       nugetTestPath: ${{ steps.nugetTestPath.outputs.nugetTestPath }}
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
+      TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
     steps:
       - name: Authenticate and get token
         id: beartok
@@ -137,6 +138,7 @@ jobs:
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
+      TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
       NUGET_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetPath}}
       NUGET_TEST_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetTestPath}}
     steps:
@@ -177,6 +179,7 @@ jobs:
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
+      TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
       FINAL_VERSION_PROCESS: ${{needs.Build-RPA-And-Test-Packages.outputs.finalVersionProcess}}
       FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
     steps:
