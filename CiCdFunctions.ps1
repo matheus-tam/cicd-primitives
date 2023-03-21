@@ -41,7 +41,7 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
     if( $response.StatusCode -ne 200 )
     {
         Write-Error "Problem with authentication (Orchestrator)"
-        Write-Output "::error::### :warning: Problem with authentication (Orchestrator)"
+        Write-Host "::error::### :warning: Problem with authentication (Orchestrator)"
         exit 1
     }
     return ConvertFrom-Json $response.Content
