@@ -100,7 +100,7 @@ function GetFinalVersionProcess([string]$orchestratorApiBaseUrl, [string]$bearer
     return $finalVersion
 }
 
-function GetFinalVersionProcessFolderFeed([string]$orchestratorApiBaseUrl, [string]$folderName, [string]$bearerToken, [bool]$enforceStrictVersioning = $false) {
+function GetFinalVersionProcessFolderFeed([string]$orchestratorApiBaseUrl, [string]$folderName, [string]$bearerToken, [string]$enforceStrictVersioning = "False") {
     $processName = GetProcessName
     $processVersion = GetProcessVersion
     
@@ -119,7 +119,9 @@ function GetFinalVersionProcessFolderFeed([string]$orchestratorApiBaseUrl, [stri
         $latestVersion = $result.value[0].Version
     }
     
-    if( $enforceStrictVersioning )
+    Write-Host "enforceStrictVersioning $($enforceStrictVersioning)" 
+    
+    if( $enforceStrictVersioning -eq "True")
     {
         Write-Error "Problem with versioning: a version of this package exists already in the Orchestrator"
         "### :warning: Problem with versioning: a version of this package exists already in the Orchestrator" >> $env:GITHUB_STEP_SUMMARY

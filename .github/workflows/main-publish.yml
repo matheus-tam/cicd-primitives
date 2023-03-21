@@ -89,7 +89,8 @@ jobs:
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "${{ vars.BASE_URL }}" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
+          $BASE_URL = "${{ vars.BASE_URL }}"
+          uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "$($BASE_URL)" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
   Build-RPA-And-Test-Packages:
     needs: [Prepare-Environment, Run-Workflow-Analyzer]
     runs-on: uipath-cli
@@ -113,7 +114,9 @@ jobs:
         id: finalVersionProcess
         shell: pwsh
         run: |
-          . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcessFolderFeed -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -folderName "${{ env.FOLDER_NAME }}" -bearerToken "${{ env.BEAR_TOK }}" -enforceStrictVersioning [string]::IsNullOrEmpty("${{ vars.ENFORCE_STRICT_VERSIONING }}".Trim())
+          . .\CiCd\CiCdFunctions.ps1
+          $enforceStrictVersioning = [string]::IsNullOrEmpty("${{ vars.ENFORCE_STRICT_VERSIONING }}".Trim())
+          $finalVersionProcess = GetFinalVersionProcessFolderFeed -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -folderName "${{ env.FOLDER_NAME }}" -bearerToken "${{ env.BEAR_TOK }}" -enforceStrictVersioning $enforceStrictVersioning
           "FINAL_VERSION_PROCESS=$finalVersionProcess" >> $env:GITHUB_ENV
           "finalVersionProcess=$finalVersionProcess" >> $env:GITHUB_OUTPUT
       - name: Build Package
