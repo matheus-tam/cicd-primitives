@@ -78,26 +78,11 @@ jobs:
           . .\CiCd\CiCdFunctions.ps1
           $baseurl = GetUrlOrchestratorApiBaseCloud -baseUrl "${{ vars.BASE_URL }}" -organizationId "${{ vars.ORG_NAME }}" -tenantName "${{ env.TENANT_NAME }}"
           "baseurl=$baseurl" >> $env:GITHUB_OUTPUT
-  Run-Workflow-Analyzer:
+  Run-Checks-And-Workflow-Analyzer:
     needs: [Prepare-Environment]
-    runs-on: uipath-cli
-    env:
-      BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
-      TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
-    steps:
-      - name: Run workflow analyzer
-        shell: pwsh
-        run: |
-          . .\CiCd\CiCdFunctions.ps1
-          $BASE_URL = "${{ vars.BASE_URL }}"
-          uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "$($BASE_URL)" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
-  Build-RPA-And-Test-Packages:
-    needs: [Prepare-Environment, Run-Workflow-Analyzer]
     runs-on: uipath-cli
     outputs:
       finalVersionProcess: ${{ steps.finalVersionProcess.outputs.finalVersionProcess }}
-      nugetPath: ${{ steps.nugetPath.outputs.nugetPath }}
-      nugetTestPath: ${{ steps.nugetTestPath.outputs.nugetTestPath }}
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
@@ -119,6 +104,31 @@ jobs:
           $finalVersionProcess = GetFinalVersionProcessFolderFeed -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -folderName "${{ env.FOLDER_NAME }}" -bearerToken "${{ env.BEAR_TOK }}" -enforceStrictVersioning $enforceStrictVersioning
           "FINAL_VERSION_PROCESS=$finalVersionProcess" >> $env:GITHUB_ENV
           "finalVersionProcess=$finalVersionProcess" >> $env:GITHUB_OUTPUT
+      - name: Run workflow analyzer
+        shell: pwsh
+        run: |
+          . .\CiCd\CiCdFunctions.ps1
+          $BASE_URL = "${{ vars.BASE_URL }}"
+          uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "$($BASE_URL)" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
+  Build-RPA-And-Test-Packages:
+    needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer]
+    runs-on: uipath-cli
+    outputs:
+      nugetPath: ${{ steps.nugetPath.outputs.nugetPath }}
+      nugetTestPath: ${{ steps.nugetTestPath.outputs.nugetTestPath }}
+    env:
+      BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
+      TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
+      FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
+      FINAL_VERSION_PROCESS: ${{needs.Run-Checks-And-Workflow-Analyzer.outputs.finalVersionProcess}}
+    steps:
+      - name: Authenticate and get token
+        id: beartok
+        shell: pwsh
+        run: |
+          . .\CiCd\CiCdFunctions.ps1
+          $bearTok = AuthenticateToCloudAndGetBearerTokenClientCredentials -clientId "${{ secrets.CLIENT_ID }}" -clientSecret "${{ secrets.CLIENT_SECRET }}" -scopes "${{ vars.SCOPES }}" -tenantName "${{ env.TENANT_NAME }}" -identityServer "${{ vars.IDENTITY_SERVER }}"
+          "BEAR_TOK=$beartok" >> $env:GITHUB_ENV
       - name: Build Package
         id: nugetPath
         shell: pwsh
@@ -184,12 +194,12 @@ jobs:
           uipcli test run "${{ vars.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" -s "${processName}_TestSet" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
           exit InterpretTestResults -testResults "$pwd\test_result.json"
   Bump-Process-Version:
-    needs: [Prepare-Environment, Build-RPA-And-Test-Packages, Run-Tests]
+    needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer, Build-RPA-And-Test-Packages, Run-Tests]
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
-      FINAL_VERSION_PROCESS: ${{needs.Build-RPA-And-Test-Packages.outputs.finalVersionProcess}}
+      FINAL_VERSION_PROCESS: ${{needs.Run-Checks-And-Workflow-Analyzer.outputs.finalVersionProcess}}
       FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
     steps:
       - name: Authenticate and get token
