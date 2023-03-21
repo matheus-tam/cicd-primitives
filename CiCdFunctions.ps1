@@ -122,8 +122,8 @@ function GetFinalVersionProcessFolderFeed([string]$orchestratorApiBaseUrl, [stri
     if( $enforceStrictVersioning -eq "True")
     {
         Write-Error "Problem with versioning: a version of this package exists already in the Orchestrator"
-        "### :warning: Problem with versioning: a version of this package exists already in the Orchestrator" >> $env:GITHUB_STEP_SUMMARY
-        exit 1
+        Write-Host "::error::### :warning: Problem with versioning: a version of this package exists already in the Orchestrator"
+        return "X.X.X"
     }
     
     if ($processVersion -eq $latestVersion) {
