@@ -61,12 +61,12 @@ function AuthenticateToCloudAndGetBearerTokenClientCredentials([string]$clientId
 }
 
 function GetFolderId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$folderName) {
-    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/Folders?%24filter=FullyQualifiedName%20eq%20'$($folderName)'"
+    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/odata/Folders?%24filter=FullyQualifiedName%20eq%20'$($folderName)'"
     return $result.value[0].Id.ToString()
 }
 
 function GetProcessId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$folderId, [string]$processName) {
-    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/Releases?%24filter=Name%20eq%20'$($processName)'%20and%20OrganizationUnitId%20eq%20$($folderId)"
+    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/odata/Releases?%24filter=Name%20eq%20'$($processName)'%20and%20OrganizationUnitId%20eq%20$($folderId)"
     return $result.value[0].Id.ToString()
 }
 
@@ -74,7 +74,7 @@ function GetFinalVersionProcess([string]$orchestratorApiBaseUrl, [string]$bearer
     $processName = GetProcessName
     $processVersion = GetProcessVersion
     
-    $uri = "$($orchestratorApiBaseUrl)/Processes/UiPath.Server.Configuration.OData.GetProcessVersions(processId='$($processName)')?`$filter=startswith(Version,'$($processVersion)')&`$orderby=Published%20desc"
+    $uri = "$($orchestratorApiBaseUrl)/odata/Processes/UiPath.Server.Configuration.OData.GetProcessVersions(processId='$($processName)')?`$filter=startswith(Version,'$($processVersion)')&`$orderby=Published%20desc"
     $result = GetOrchApi -bearerToken $bearerToken -uri $uri # -debug $true
     
     if($result."@odata.count" -eq 0) {
@@ -96,7 +96,26 @@ function GetFinalVersionProcess([string]$orchestratorApiBaseUrl, [string]$bearer
 function UploadPackageToOrchestrator([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$filePath) {
     $tenantName = ExtractTenantNameFromUri -uri $orchestratorApiBaseUrl
     $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-TenantName"="$($tenantName)"}
-    $uri = "$($orchestratorApiBaseUrl)/Processes/UiPath.Server.Configuration.OData.UploadPackage"
+    $uri = "$($orchestratorApiBaseUrl)/odata/Processes/UiPath.Server.Configuration.OData.UploadPackage"
+    $Form = @{
+        file = Get-Item -Path $filePath
+    }
+    $response = Invoke-RestMethod -Uri $uri -Method Post -Form $Form -Headers $headers -ContentType "multipart/form-data"
+}
+
+function GetFeedId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$folderId) {
+    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/api/PackageFeeds/GetFolderFeed?folderId=$($folderId)"
+    return $result.ToString()
+}
+
+function UploadPackageToFolder([string]$orchestratorApiBaseUrl, [string]$folderName, [string]$bearerToken, [string]$filePath) {
+    $tenantName = ExtractTenantNameFromUri -uri $orchestratorApiBaseUrl
+    
+    $folderId = GetFolderId -orchestratorApiBaseUrl "$($orchestratorApiBaseUrl)" -bearerToken "$($bearerToken)" -folderName "$($folderName)"
+    $feedId = GetFeedId -orchestratorApiBaseUrl "$($orchestratorApiBaseUrl)" -bearerToken "$($bearerToken)" -folderId "$($folderId)"
+    
+    $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-TenantName"="$($tenantName)"}
+    $uri = "$($orchestratorApiBaseUrl)/odata/Processes/UiPath.Server.Configuration.OData.UploadPackage()?feedId=$($feedId)"
     $Form = @{
         file = Get-Item -Path $filePath
     }
@@ -107,13 +126,13 @@ function BumpProcessVersion([string]$orchestratorApiBaseUrl, [string]$bearerToke
     $tenantName = ExtractTenantNameFromUri -uri $orchestratorApiBaseUrl
     $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-TenantName"="$($tenantName)"; "X-UIPATH-OrganizationUnitId"="$($folderId)"}
     $body = @{"packageVersion"=$processVersion}
-    $result = PostOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/Releases($($processId))/UiPath.Server.Configuration.OData.UpdateToSpecificPackageVersion" -headers $headers -body $body
+    $result = PostOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/odata/Releases($($processId))/UiPath.Server.Configuration.OData.UpdateToSpecificPackageVersion" -headers $headers -body $body
 }
 
 # Helper functions
 
 function GetUrlOrchestratorApiBaseCloud([string]$baseUrl, [string]$organizationId, [string]$tenantName) {
-    return "$($baseUrl)/$($organizationId)/$($tenantName)/orchestrator_/odata"
+    return "$($baseUrl)/$($organizationId)/$($tenantName)/orchestrator_"
 }
 
 function GetProcessName() {
@@ -146,7 +165,7 @@ function IncrementVersion([string]$version) {
 }
 
 function ExtractTenantNameFromUri([string]$uri) {
-    return "$uri" -replace "(?sm).*?.*/([^/]*?)/orchestrator_/odata(.*?)$.*","`$1"
+    return "$uri" -replace "(?sm).*?.*/([^/]*?)/orchestrator_/(.*?)$.*","`$1"
 }
 
 function InterpretTestResults([string]$testResults) {

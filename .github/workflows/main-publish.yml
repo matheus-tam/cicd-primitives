@@ -90,7 +90,7 @@ jobs:
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "${{ env.BASE_URL }}" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
+          uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "${{ vars.BASE_URL }}" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
   Build-RPA-And-Test-Packages:
     needs: [Prepare-Environment, Run-Workflow-Analyzer]
     runs-on: uipath-cli
@@ -144,6 +144,7 @@ jobs:
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
+      FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
       NUGET_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetPath}}
       NUGET_TEST_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetTestPath}}
     steps:
@@ -158,12 +159,12 @@ jobs:
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          UploadPackageToOrchestrator -orchestratorApiBaseUrl ${{ env.BASE_URL }} -bearerToken ${{ env.BEAR_TOK }} -filePath ${{ env.NUGET_PATH }}
+          UploadPackageToFolder -orchestratorApiBaseUrl ${{ env.BASE_URL }} -folderName ${{ env.FOLDER_NAME }} -bearerToken ${{ env.BEAR_TOK }} -filePath ${{ env.NUGET_PATH }}
       - name: Upload test package to Orchestrator
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          UploadPackageToOrchestrator -orchestratorApiBaseUrl ${{ env.BASE_URL }} -bearerToken ${{ env.BEAR_TOK }} -filePath ${{ env.NUGET_TEST_PATH }}
+          UploadPackageToFolder -orchestratorApiBaseUrl ${{ env.BASE_URL }} -folderName ${{ env.FOLDER_NAME }} -bearerToken ${{ env.BEAR_TOK }} -filePath ${{ env.NUGET_TEST_PATH }}
   Run-Tests:
     needs: [Prepare-Environment, Build-RPA-And-Test-Packages, Upload-Packages]
     runs-on: uipath-cli
@@ -177,7 +178,7 @@ jobs:
         run: |
           . .\CiCd\CiCdFunctions.ps1
           $processName = GetProcessName
-          uipcli test run "${{ env.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" -s "${processName}_TestSet" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
+          uipcli test run "${{ vars.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" -s "${processName}_TestSet" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
           exit InterpretTestResults -testResults "$pwd\test_result.json"
   Bump-Process-Version:
     needs: [Prepare-Environment, Build-RPA-And-Test-Packages, Run-Tests]
