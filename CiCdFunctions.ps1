@@ -41,6 +41,7 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
     if( $response.StatusCode -ne 200 )
     {
         Write-Host "::error::### :warning: Problem with authentication (Orchestrator)"
+        exit 1
     }
     return ConvertFrom-Json $response.Content
 }
@@ -121,9 +122,8 @@ function GetFinalVersionProcessFolderFeed([string]$orchestratorApiBaseUrl, [stri
     
     if( $enforceStrictVersioning -eq "True")
     {
-        #Write-Error "Problem with versioning: a version of this package exists already in the Orchestrator"
         Write-Host "::error::### :warning: Problem with versioning: a version of this package exists already in the Orchestrator"
-        return "X.X.X"
+        exit 1
     }
     
     if ($processVersion -eq $latestVersion) {
