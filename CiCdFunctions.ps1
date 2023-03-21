@@ -41,7 +41,8 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
     if( $response.StatusCode -ne 200 )
     {
         Write-Error "Problem with authentication (Orchestrator)"
-        #exit 1
+        "### :warning: Problem with authentication (Orchestrator)" >> $env:GITHUB_STEP_SUMMARY
+        exit 1
     }
     return ConvertFrom-Json $response.Content
 }
@@ -70,6 +71,12 @@ function GetProcessId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [st
     return $result.value[0].Id.ToString()
 }
 
+function GetFolderFeedId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$folderId) {
+    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/api/PackageFeeds/GetFolderFeed?folderId=$($folderId)"
+    return $result.ToString()
+}
+
+# Legacy: don't touch
 function GetFinalVersionProcess([string]$orchestratorApiBaseUrl, [string]$bearerToken) {
     $processName = GetProcessName
     $processVersion = GetProcessVersion
@@ -93,6 +100,42 @@ function GetFinalVersionProcess([string]$orchestratorApiBaseUrl, [string]$bearer
     return $finalVersion
 }
 
+function GetFinalVersionProcessFolderFeed([string]$orchestratorApiBaseUrl, [string]$folderName, [string]$bearerToken, [bool]$enforceStrictVersioning = $false) {
+    $processName = GetProcessName
+    $processVersion = GetProcessVersion
+    
+    $tenantName = ExtractTenantNameFromUri -uri $orchestratorApiBaseUrl
+    
+    $folderId = GetFolderId -orchestratorApiBaseUrl "$($orchestratorApiBaseUrl)" -bearerToken "$($bearerToken)" -folderName "$($folderName)"
+    $feedId = GetFolderFeedId -orchestratorApiBaseUrl "$($orchestratorApiBaseUrl)" -bearerToken "$($bearerToken)" -folderId "$($folderId)"
+    
+    $uri = "$($orchestratorApiBaseUrl)/odata/Processes/UiPath.Server.Configuration.OData.GetProcessVersions(processId='$($processName)')?feedId=$($feedId)&`$filter=startswith(Version,'$($processVersion)')&`$orderby=Published%20desc"
+    $result = GetOrchApi -bearerToken $bearerToken -uri $uri # -debug $true
+    
+    if($result."@odata.count" -eq 0) {
+        return $processVersion
+    }
+    else {
+        $latestVersion = $result.value[0].Version
+    }
+    
+    if( $enforceStrictVersioning )
+    {
+        Write-Error "Problem with versioning: a version of this package exists already in the Orchestrator"
+        "### :warning: Problem with versioning: a version of this package exists already in the Orchestrator" >> $env:GITHUB_STEP_SUMMARY
+        exit 1
+    }
+    
+    if ($processVersion -eq $latestVersion) {
+        $finalVersion = "$($processVersion).1"
+    }
+    else {
+        $finalVersion = IncrementVersion -version $latestVersion
+    }
+    return $finalVersion
+}
+
+# Legacy: don't touch
 function UploadPackageToOrchestrator([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$filePath) {
     $tenantName = ExtractTenantNameFromUri -uri $orchestratorApiBaseUrl
     $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-TenantName"="$($tenantName)"}
@@ -103,16 +146,11 @@ function UploadPackageToOrchestrator([string]$orchestratorApiBaseUrl, [string]$b
     $response = Invoke-RestMethod -Uri $uri -Method Post -Form $Form -Headers $headers -ContentType "multipart/form-data"
 }
 
-function GetFeedId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$folderId) {
-    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/api/PackageFeeds/GetFolderFeed?folderId=$($folderId)"
-    return $result.ToString()
-}
-
 function UploadPackageToFolder([string]$orchestratorApiBaseUrl, [string]$folderName, [string]$bearerToken, [string]$filePath) {
     $tenantName = ExtractTenantNameFromUri -uri $orchestratorApiBaseUrl
     
     $folderId = GetFolderId -orchestratorApiBaseUrl "$($orchestratorApiBaseUrl)" -bearerToken "$($bearerToken)" -folderName "$($folderName)"
-    $feedId = GetFeedId -orchestratorApiBaseUrl "$($orchestratorApiBaseUrl)" -bearerToken "$($bearerToken)" -folderId "$($folderId)"
+    $feedId = GetFolderFeedId -orchestratorApiBaseUrl "$($orchestratorApiBaseUrl)" -bearerToken "$($bearerToken)" -folderId "$($folderId)"
     
     $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-TenantName"="$($tenantName)"}
     $uri = "$($orchestratorApiBaseUrl)/odata/Processes/UiPath.Server.Configuration.OData.UploadPackage()?feedId=$($feedId)"

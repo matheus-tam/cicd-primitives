@@ -53,7 +53,6 @@ jobs:
           . .\CiCd\CiCdFunctions.ps1
           $processName = GetProcessName
           Write-Host "Building $processName for environment: ${{ inputs.environment }}"
-          "### Hello world! :rocket:" >> $env:GITHUB_STEP_SUMMARY
       - name: Get environment variables
         id: envvars
         shell: pwsh
@@ -101,6 +100,7 @@ jobs:
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
+      FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
     steps:
       - name: Authenticate and get token
         id: beartok
@@ -113,7 +113,7 @@ jobs:
         id: finalVersionProcess
         shell: pwsh
         run: |
-          . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcess -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -bearerToken "${{ env.BEAR_TOK }}"
+          . .\CiCd\CiCdFunctions.ps1; $finalVersionProcess = GetFinalVersionProcessFolderFeed -orchestratorApiBaseUrl "${{ env.BASE_URL }}" -folderName "${{ env.FOLDER_NAME }}" -bearerToken "${{ env.BEAR_TOK }}" -enforceStrictVersioning [string]::IsNullOrEmpty("${{ vars.ENFORCE_STRICT_VERSIONING }}".Trim())
           "FINAL_VERSION_PROCESS=$finalVersionProcess" >> $env:GITHUB_ENV
           "finalVersionProcess=$finalVersionProcess" >> $env:GITHUB_OUTPUT
       - name: Build Package
