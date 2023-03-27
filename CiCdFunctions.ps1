@@ -41,7 +41,7 @@ function PostOrchApi([string]$bearerToken, [string]$uri, $body, $headers = $null
     if( $response.StatusCode -ne 200 )
     {
         Write-Host "::error::### :warning: Problem with authentication (Orchestrator)"
-        exit 1
+        #exit 1
     }
     return ConvertFrom-Json $response.Content
 }
@@ -66,7 +66,8 @@ function GetFolderId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [str
 }
 
 function GetProcessId([string]$orchestratorApiBaseUrl, [string]$bearerToken, [string]$folderId, [string]$processName) {
-    $result = GetOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/odata/Releases?%24filter=Name%20eq%20'$($processName)'%20and%20OrganizationUnitId%20eq%20$($folderId)"
+    $headers = @{"Authorization"="Bearer $($bearerToken)"; "X-UIPATH-OrganizationUnitId"="$($folderId)"}
+    $result = GetOrchApi -bearerToken $bearerToken -headers $headers -uri "$($orchestratorApiBaseUrl)/odata/Releases?%24filter=Name%20eq%20'$($processName)'%20and%20OrganizationUnitId%20eq%20$($folderId)"
     return $result.value[0].Id.ToString()
 }
 
