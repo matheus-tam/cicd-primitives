@@ -6,6 +6,9 @@ on:
       environment:
         required: true
         type: string
+      folder_dev:
+        required: true
+        type: string
       folder_uat:
         required: true
         type: string
@@ -57,6 +60,11 @@ jobs:
         id: envvars
         shell: pwsh
         run: |
+          if ( "${{ inputs.environment }}" -eq "dev")
+          {
+            $tenantName = "${{ vars.TENANT_NAME_DEV }}"
+            $folderName = "${{ inputs.folder_dev }}"
+          }
           if ( "${{ inputs.environment }}" -eq "uat")
           {
             $tenantName = "${{ vars.TENANT_NAME_UAT }}"
