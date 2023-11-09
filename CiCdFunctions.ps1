@@ -168,6 +168,39 @@ function BumpProcessVersion([string]$orchestratorApiBaseUrl, [string]$bearerToke
     $result = PostOrchApi -bearerToken $bearerToken -uri "$($orchestratorApiBaseUrl)/odata/Releases($($processId))/UiPath.Server.Configuration.OData.UpdateToSpecificPackageVersion" -headers $headers -body $body
 }
 
+function AddReleaseNotes([string]$projectName, [string]$version, [string]$releaseNotes) {
+    $nugetFilename = $projectName + "." + $version + ".nupkg"
+    $zipFilename = $projectName + "." + $version + ".zip"
+    $folderExtraction = $projectName + "." + $version
+    $nuspecFilename = $folderExtraction + "\" + $projectName + ".nuspec"
+    
+    # Rename nuget to zip
+    Move-Item -Path "$($nugetFilename)" -Destination "$($zipFilename)"
+    
+    # Unzip zip
+    Expand-Archive -Path "$($zipFilename)" -DestinationPath "$($folderExtraction)"
+    
+    # Check if releaseNotes exists
+    $nuspecContents = Get-Content -Path "$($nuspecFilename)" -Raw
+    if( -not $nuspecContents.Contains("releaseNotes") ) {
+        # if not add releaseNotes
+        $nuspecContents = $nuspecContents.Replace("</description>", "</description>`r`n<releaseNotes>$($releaseNotes)</releaseNotes>")
+        Set-Content -Path "$($nuspecFilename)" -Value "$($nuspecContents)"
+    }
+    
+    # Delete Zip
+    Remove-Item -Path "$($zipFilename)"
+    
+    # Zip folder
+    Compress-Archive -Path "$($folderExtraction)\*" -DestinationPath "$($zipFilename)"
+    
+    # Delete folder
+    Remove-Item -Path "$($folderExtraction)" -Recurse -Force -Confirm:$false
+    
+    # Rename zip to nuget
+    Move-Item -Path "$($zipFilename)" -Destination "$($nugetFilename)"
+}
+
 # Helper functions
 
 function GetUrlOrchestratorApiBaseCloud([string]$baseUrl, [string]$organizationId, [string]$tenantName) {
