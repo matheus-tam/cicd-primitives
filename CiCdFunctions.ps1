@@ -201,6 +201,38 @@ function AddReleaseNotes([string]$projectName, [string]$version, [string]$releas
     Move-Item -Path "$($zipFilename)" -Destination "$($nugetFilename)"
 }
 
+function AddAuthor([string]$projectName, [string]$version, [string]$author) {
+    $currentDir = (Get-Location).Path
+    
+    $nugetFilename = $currentDir + "\" + $projectName + "." + $version + ".nupkg"
+    $zipFilename = $currentDir + "\" + $projectName + "." + $version + ".zip"
+    $folderExtraction = $currentDir + "\" + $projectName + "." + $version
+    $nuspecFilename = $folderExtraction + "\" + $projectName + ".nuspec"
+    
+    # Rename nuget to zip
+    Move-Item -Path "$($nugetFilename)" -Destination "$($zipFilename)"
+    
+    # Unzip zip
+    Expand-Archive -Path "$($zipFilename)" -DestinationPath "$($folderExtraction)"
+    
+    # Replace author
+    $xml = [xml](Get-Content -Path "$($nuspecFilename)")
+    $xml.package.metadata.authors = $author
+    $xml.Save("$($nuspecFilename)")
+    
+    # Delete Zip
+    Remove-Item -Path "$($zipFilename)"
+    
+    # Zip folder
+    Compress-Archive -Path "$($folderExtraction)\*" -DestinationPath "$($zipFilename)"
+    
+    # Delete folder
+    Remove-Item -Path "$($folderExtraction)" -Recurse -Force -Confirm:$false
+    
+    # Rename zip to nuget
+    Move-Item -Path "$($zipFilename)" -Destination "$($nugetFilename)"
+}
+
 # Helper functions
 
 function GetUrlOrchestratorApiBaseCloud([string]$baseUrl, [string]$organizationId, [string]$tenantName) {
