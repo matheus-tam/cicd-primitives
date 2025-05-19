@@ -22,7 +22,7 @@ on:
         required: true
 jobs:
   Get-CiCd-Primitives:
-    runs-on: uipath-cli
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout the latest version of the CiCd primitives
         uses: actions/checkout@v3
@@ -35,7 +35,7 @@ jobs:
         run: Write-Host ( "Change in branch? ${{ github.head_ref || github.ref_name }}" + " ${{github.sha}}".Substring(0, 8) )
   Prepare-Environment:
     needs: Get-CiCd-Primitives
-    runs-on: uipath-cli
+    runs-on: windows-latest
     outputs:
       tenantName: ${{ steps.envvars.outputs.tenantName }}
       folderName: ${{ steps.envvars.outputs.folderName }}
@@ -85,7 +85,7 @@ jobs:
           "baseurl=$baseurl" >> $env:GITHUB_OUTPUT
   Run-Checks-And-Workflow-Analyzer:
     needs: [Prepare-Environment]
-    runs-on: uipath-cli
+    runs-on: windows-latest
     outputs:
       finalVersionProcess: ${{ steps.finalVersionProcess.outputs.finalVersionProcess }}
     env:
@@ -117,7 +117,7 @@ jobs:
           uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "$($BASE_URL)" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
   Build-RPA-And-Test-Packages:
     needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer]
-    runs-on: uipath-cli
+    runs-on: windows-latest
     outputs:
       nugetPath: ${{ steps.nugetPath.outputs.nugetPath }}
       nugetTestPath: ${{ steps.nugetTestPath.outputs.nugetTestPath }}
@@ -158,7 +158,7 @@ jobs:
           "nugetTestPath=$nugetTestPath" >> $env:GITHUB_OUTPUT
   Upload-Packages:
     needs: [Prepare-Environment, Build-RPA-And-Test-Packages]
-    runs-on: uipath-cli
+    runs-on: windows-latest
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
@@ -185,7 +185,7 @@ jobs:
           UploadPackageToFolder -orchestratorApiBaseUrl ${{ env.BASE_URL }} -folderName ${{ env.FOLDER_NAME }} -bearerToken ${{ env.BEAR_TOK }} -filePath ${{ env.NUGET_TEST_PATH }}
   Run-Tests:
     needs: [Prepare-Environment, Build-RPA-And-Test-Packages, Upload-Packages]
-    runs-on: uipath-cli
+    runs-on: windows-latest
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
@@ -200,7 +200,7 @@ jobs:
           exit InterpretTestResults -testResults "$pwd\test_result.json"
   Bump-Process-Version:
     needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer, Build-RPA-And-Test-Packages, Run-Tests]
-    runs-on: uipath-cli
+    runs-on: windows-latest
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
