@@ -22,7 +22,7 @@ on:
         required: true
 jobs:
   Get-CiCd-Primitives:
-    runs-on: ubuntu-latest
+    runs-on: uipath-cli
     steps:
       - name: Checkout the latest version of the CiCd primitives
         uses: actions/checkout@v3
@@ -35,7 +35,7 @@ jobs:
         run: Write-Host ( "Change in branch? ${{ github.head_ref || github.ref_name }}" + " ${{github.sha}}".Substring(0, 8) )
   Prepare-Environment:
     needs: Get-CiCd-Primitives
-    runs-on: windows-latest
+    runs-on: uipath-cli
     outputs:
       tenantName: ${{ steps.envvars.outputs.tenantName }}
       folderName: ${{ steps.envvars.outputs.folderName }}
@@ -85,7 +85,7 @@ jobs:
           "baseurl=$baseurl" >> $env:GITHUB_OUTPUT
   Run-Checks-And-Workflow-Analyzer:
     needs: [Prepare-Environment]
-    runs-on: windows-latest
+    runs-on: uipath-cli
     outputs:
       finalVersionProcess: ${{ steps.finalVersionProcess.outputs.finalVersionProcess }}
     env:
@@ -118,7 +118,7 @@ jobs:
           uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "$($BASE_URL)" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
   Build-RPA-And-Test-Packages:
     needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer]
-    runs-on: windows-latest
+    runs-on: uipath-cli
     outputs:
       nugetPath: ${{ steps.nugetPath.outputs.nugetPath }}
       nugetTestPath: ${{ steps.nugetTestPath.outputs.nugetTestPath }}
@@ -169,7 +169,7 @@ jobs:
         
   Upload-Packages:
     needs: [Prepare-Environment, Build-RPA-And-Test-Packages]
-    runs-on: windows-latest
+    runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
@@ -208,7 +208,8 @@ jobs:
   
   Run-Tests:
     needs: [Prepare-Environment, Build-RPA-And-Test-Packages, Upload-Packages]
-    runs-on: windows-latest
+    runs-on: uipath-cli
+    if: ${{ inputs.environment }} == 'uat'
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
@@ -219,11 +220,11 @@ jobs:
         run: |
           . .\CiCd\CiCdFunctions.ps1
           $processName = GetProcessName
-          uipcli test run "${{ vars.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" -s "${processName}_TestSet_${{ env.FOLDER_NAME }}" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
+          uipcli test run "${{ vars.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" --testset "${{ env.FOLDER_NAME }}\TestSet" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
           exit InterpretTestResults -testResults "$pwd\test_result.json"
   # Bump-Process-Version:
   #   needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer, Build-RPA-And-Test-Packages, Run-Tests]
-  #   runs-on: windows-latest
+  #   runs-on: uipath-cli
   #   env:
   #     BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
   #     TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
