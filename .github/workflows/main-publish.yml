@@ -115,6 +115,9 @@ jobs:
         run: |
           . .\CiCd\CiCdFunctions.ps1
           $BASE_URL = "${{ vars.BASE_URL }}"
+          echo ${{ vars.BASE_URL }}
+          echo ${{ env.TENANT_NAME }}
+          echo ${{ vars.ORG_NAME }}
           uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "${{ vars.BASE_URL }}" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
   Build-RPA-And-Test-Packages:
     needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer]
