@@ -142,12 +142,12 @@ jobs:
           . .\CiCd\CiCdFunctions.ps1
           $shortSHA = "${{github.sha}}".Substring(0, 7)
           uipcli package pack "$pwd\project.json" -o "${{ github.workspace }}\package" --libraryOrchestratorUrl ${{ vars.BASE_URL }} --libraryOrchestratorAccountForApp "${{ secrets.CLIENT_ID }}"  --libraryOrchestratorApplicationId "${{ secrets.CLIENT_ID }}" --libraryOrchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --libraryOrchestratorApplicationScope "${{ vars.SCOPES }}" --libraryOrchestratorTenant "${{ env.TENANT_NAME }}" --libraryOrchestratorFolder "${{ env.FOLDER_NAME }}" --releaseNotes "${{ github.event.head_commit.message }}"
-      - name: Upload UiPath Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: Artifacts
-          path: |
-           package/*.*
+      # - name: Upload UiPath Artifacts
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: Artifacts
+      #     path: |
+      #      package/*.*
            
         # $processName = GetProcessName
         # $nugetPath = "$processName.${{ env.FINAL_VERSION_PROCESS }}.nupkg"
@@ -174,13 +174,13 @@ jobs:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
       FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
-      NUGET_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetPath}}
-      NUGET_TEST_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetTestPath}}
+      # NUGET_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetPath}}
+      # NUGET_TEST_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetTestPath}}
     steps:
-      - name: Download UiPath Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: Artifacts
+      # - name: Download UiPath Artifacts
+      #   uses: actions/download-artifact@v2
+      #   with:
+      #     name: Artifacts
       - name: Publish Nuget Package to UAT
         shell: pwsh
         run: |
