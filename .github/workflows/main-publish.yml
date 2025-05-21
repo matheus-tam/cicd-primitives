@@ -76,13 +76,13 @@ jobs:
           "tenantName=$tenantName" >> $env:GITHUB_OUTPUT
           "folderName=$folderName" >> $env:GITHUB_OUTPUT
           Write-Host "Working on Organisation: ${{ vars.ORG_NAME }} Tenant: ${tenantName} Folder: $folderName"
-      - name: Get Base Orchestrator Url
-        id: baseurl
-        shell: pwsh
-        run: |
-          . .\CiCd\CiCdFunctions.ps1
-          $baseurl = GetUrlOrchestratorApiBaseCloud -baseUrl "${{ vars.BASE_URL }}" -organizationId "${{ vars.ORG_NAME }}" -tenantName "${{ env.TENANT_NAME }}"
-          "baseurl=$baseurl" >> $env:GITHUB_OUTPUT
+      # - name: Get Base Orchestrator Url
+      #   id: baseurl
+      #   shell: pwsh
+      #   run: |
+      #     . .\CiCd\CiCdFunctions.ps1
+      #     $baseurl = GetUrlOrchestratorApiBaseCloud -baseUrl "${{ vars.BASE_URL }}" -organizationId "${{ vars.ORG_NAME }}" -tenantName "${{ env.TENANT_NAME }}"
+      #     "baseurl=$baseurl" >> $env:GITHUB_OUTPUT
   Run-Checks-And-Workflow-Analyzer:
     needs: [Prepare-Environment]
     runs-on: uipath-cli
