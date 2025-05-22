@@ -23,10 +23,11 @@ jobs:
 
   Run-Tests:
       needs: [Get-CiCd-Primitives]
-      if: ${{ inputs.environment }} == 'uat'
+      if: inputs.environment == 'uat'
       runs-on: uipath-cli
       steps:
         - name: Run Test Process
           shell: pwsh
           run: |
+            echo "${{ inputs.environment }}"
             echo "Oh damn, it got executed!!!"
