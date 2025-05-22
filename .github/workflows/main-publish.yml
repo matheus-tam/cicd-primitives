@@ -132,7 +132,7 @@ jobs:
       # NUGET_PATH: ${{needs.Build-Packages.outputs.nugetPath}}
       # NUGET_TEST_PATH: ${{needs.Build-Packages.outputs.nugetTestPath}}
     steps:
-      - name: Publish Nuget Package to UAT
+      - name: Publish Nuget Package
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
@@ -151,9 +151,6 @@ jobs:
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          if ( "${{ inputs.environment }}" -eq "uat")
-          {
           uipcli test run "${{ vars.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" --testset "TestSet" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
           exit InterpretTestResults -testResults "$pwd\test_result.json"
-          }
           
