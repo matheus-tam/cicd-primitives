@@ -1,0 +1,32 @@
+name: Debug workflow
+run-name: Debug CiCd
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+jobs:
+  Get-CiCd-Primitives:
+    runs-on: uipath-cli
+    steps:
+      - name: Checkout the latest version of the CiCd primitives
+        uses: actions/checkout@v3
+        with:
+           repository: Test-Organisation-FCC/cicd-primitives
+           ref: main
+           path: CiCd
+      - name: Display environment
+        shell: pwsh
+        run: echo "${{ inputs.environment }}"
+
+  Run-Tests:
+      needs: [Get-CiCd-Primitives]
+      if: ${{ inputs.environment }} == 'uat'
+      runs-on: uipath-cli
+      steps:
+        - name: Run Test Process
+          shell: pwsh
+          run: |
+            echo "Oh damn, it got executed!!!"
