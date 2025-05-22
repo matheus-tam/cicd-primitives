@@ -52,6 +52,7 @@ jobs:
         run: |
           . .\CiCd\CiCdFunctions.ps1
           $processName = GetProcessName
+          "PROCESS_NAME=$processName" >> $env:GITHUB_ENV
           Write-Host "Building $processName for environment: ${{ inputs.environment }}"
       - name: Get environment variables
         id: envvars
@@ -116,7 +117,7 @@ jobs:
           . .\CiCd\CiCdFunctions.ps1
           $BASE_URL = "${{ vars.BASE_URL }}"
           uipcli package analyze "$pwd\project.json" --analyzerTraceLevel "Error" --orchestratorUrl "${{ vars.BASE_URL }}" --orchestratorTenant "${{ env.TENANT_NAME }}" --orchestratorAccountForApp  "${{ vars.ORG_NAME }}" --orchestratorApplicationId  "${{ secrets.CLIENT_ID }}" --orchestratorApplicationSecret "${{ secrets.CLIENT_SECRET }}" --orchestratorApplicationScope "${{ vars.SCOPES }}"
-  Build-RPA-And-Test-Packages:
+  Build-Packages:
     needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer]
     runs-on: uipath-cli
     outputs:
@@ -168,14 +169,14 @@ jobs:
         #Commented out because now we have the --releaseNotes argument in the CLI
         
   Upload-Packages:
-    needs: [Prepare-Environment, Build-RPA-And-Test-Packages]
+    needs: [Prepare-Environment, Build-Packages]
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
       FOLDER_NAME: ${{needs.Prepare-Environment.outputs.folderName}}
-      # NUGET_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetPath}}
-      # NUGET_TEST_PATH: ${{needs.Build-RPA-And-Test-Packages.outputs.nugetTestPath}}
+      # NUGET_PATH: ${{needs.Build-Packages.outputs.nugetPath}}
+      # NUGET_TEST_PATH: ${{needs.Build-Packages.outputs.nugetTestPath}}
     steps:
       # - name: Download UiPath Artifacts
       #   uses: actions/download-artifact@v2
@@ -186,7 +187,7 @@ jobs:
         run: |
           . .\CiCd\CiCdFunctions.ps1
           $shortSHA = "${{github.sha}}".Substring(0, 7)
-          uipcli package deploy ${{ github.workspace }}\package "${{vars.BASE_URL}}" "${{env.TENANT_NAME}}" -A "${{vars.ORG_NAME}}" -I "${{ secrets.CLIENT_ID }}" -S "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" -o "${{ env.FOLDER_NAME }}" --traceLevel Information --entryPointsPath "Main.xaml"
+          uipcli package deploy ${{ github.workspace }}\package "${{vars.BASE_URL}}" "${{env.TENANT_NAME}}" -A "${{vars.ORG_NAME}}" -I "${{ secrets.CLIENT_ID }}" -S "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" -o "${{ env.FOLDER_NAME }}" --traceLevel Information --entryPointsPath "Main.xaml" --processName "${{ env.PROCESS_NAME }}"
       
       # - name: Authenticate and get token
       #   id: beartok
@@ -207,7 +208,7 @@ jobs:
       #     UploadPackageToFolder -orchestratorApiBaseUrl ${{ env.BASE_URL }} -folderName ${{ env.FOLDER_NAME }} -bearerToken ${{ env.BEAR_TOK }} -filePath ${{ env.NUGET_TEST_PATH }}
   
   Run-Tests:
-    needs: [Prepare-Environment, Build-RPA-And-Test-Packages, Upload-Packages]
+    needs: [Prepare-Environment, Build-Packages, Upload-Packages]
     runs-on: uipath-cli
     if: ${{ inputs.environment }} == 'uat'
     env:
@@ -223,7 +224,7 @@ jobs:
           uipcli test run "${{ vars.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" --testset "TestSet" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
           exit InterpretTestResults -testResults "$pwd\test_result.json"
   # Bump-Process-Version:
-  #   needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer, Build-RPA-And-Test-Packages, Run-Tests]
+  #   needs: [Prepare-Environment, Run-Checks-And-Workflow-Analyzer, Build-Packages, Run-Tests]
   #   runs-on: uipath-cli
   #   env:
   #     BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
