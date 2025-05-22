@@ -142,7 +142,7 @@ jobs:
 
   Run-Tests:
     needs: [Prepare-Environment, Build-Packages, Upload-Packages]
-    if: ${{ inputs.environment }} -eq "uat"
+    if: \${{ inputs.environment == 'uat' }}
     runs-on: uipath-cli
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
