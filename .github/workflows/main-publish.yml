@@ -209,8 +209,8 @@ jobs:
   
   Run-Tests:
     needs: [Prepare-Environment, Build-Packages, Upload-Packages]
+    if: ${{ inputs.environment }} -eq "uat"
     runs-on: uipath-cli
-    if: ${{ inputs.environment }} == 'uat'
     env:
       BASE_URL: ${{needs.Prepare-Environment.outputs.baseurl}}
       TENANT_NAME: ${{needs.Prepare-Environment.outputs.tenantName}}
@@ -220,7 +220,6 @@ jobs:
         shell: pwsh
         run: |
           . .\CiCd\CiCdFunctions.ps1
-          $processName = GetProcessName
           uipcli test run "${{ vars.BASE_URL }}" "${{ env.TENANT_NAME }}" --accountForApp "${{ vars.ORG_NAME }}" --applicationId "${{ secrets.CLIENT_ID }}" --applicationSecret "${{ secrets.CLIENT_SECRET }}" --applicationScope "${{ vars.SCOPES }}" --testset "TestSet" -o "${{ env.FOLDER_NAME }}" --out uipath -r "$pwd\test_result.json"
           exit InterpretTestResults -testResults "$pwd\test_result.json"
   # Bump-Process-Version:
